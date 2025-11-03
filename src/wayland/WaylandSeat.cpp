@@ -304,6 +304,11 @@ void WaylandSeat::DataSelection( wl_data_device* dev, wl_data_offer* offer )
     }
 }
 
+void WaylandSeat::SetInputSerial( uint32_t serial )
+{
+    m_inputSerial = serial;
+}
+
 WaylandWindow* WaylandSeat::GetFocusedWindow() const
 {
     auto kbdFocus = m_keyboard->ActiveWindow();

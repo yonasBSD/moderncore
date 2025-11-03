@@ -63,12 +63,15 @@ private:
     void DataDrop( wl_data_device* dev );
     void DataSelection( wl_data_device* dev, wl_data_offer* offer );
 
+    void SetInputSerial( uint32_t serial );
+
     [[nodiscard]] WaylandWindow* GetFocusedWindow() const;
     [[nodiscard]] WaylandWindow* GetWindow( wl_surface* surf ) const;
 
     wl_seat* m_seat;
     std::unique_ptr<WaylandPointer> m_pointer;
     std::unique_ptr<WaylandKeyboard> m_keyboard;
+    uint32_t m_inputSerial = 0;
 
     wp_cursor_shape_manager_v1* m_cursorShapeManager = nullptr;
     wl_data_device* m_dataDevice = nullptr;
