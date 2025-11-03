@@ -38,4 +38,7 @@ private:
 
     std::shared_ptr<VlkImage> m_image;
     std::unique_ptr<VlkImageView> m_imageView;
+
+    VkFormat m_format;
+    uint32_t m_width, m_height;
 };

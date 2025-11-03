@@ -164,6 +164,9 @@ static void HostCopy( VlkDevice& device, VlkImage& image, const std::vector<MipD
 }
 
 Texture::Texture( VlkDevice& device, const Bitmap& bitmap, VkFormat format, bool mips, std::vector<std::shared_ptr<VlkFence>>& fencesOut, TaskDispatch* td )
+    : m_format( format )
+    , m_width( bitmap.Width() )
+    , m_height( bitmap.Height() )
 {
     ZoneScoped;
 
@@ -189,6 +192,9 @@ Texture::Texture( VlkDevice& device, const Bitmap& bitmap, VkFormat format, bool
 }
 
 Texture::Texture( VlkDevice& device, const BitmapHdr& bitmap, VkFormat format, bool mips, std::vector<std::shared_ptr<VlkFence>>& fencesOut, TaskDispatch* td )
+    : m_format( format )
+    , m_width( bitmap.Width() )
+    , m_height( bitmap.Height() )
 {
     ZoneScoped;
 
