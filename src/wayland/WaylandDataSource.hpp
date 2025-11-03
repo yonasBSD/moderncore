@@ -1,0 +1,24 @@
+#pragma once
+
+#include <wayland-client.h>
+
+#include "util/NoCopy.hpp"
+
+class WaylandDataSource
+{
+public:
+    WaylandDataSource( wl_data_device_manager* manager, wl_data_device* device, const char** mime, size_t count, uint32_t serial );
+    ~WaylandDataSource();
+
+    NoCopy( WaylandDataSource );
+
+private:
+    void SourceTarget( wl_data_source* source, const char* mimeType );
+    void SourceSend( wl_data_source* source, const char* mimeType, int32_t fd );
+    void SourceCancelled( wl_data_source* source );
+    void SourceDndDropPerformed( wl_data_source* source );
+    void SourceDndFinished( wl_data_source* source );
+    void SourceAction( wl_data_source* source, uint32_t dndAction );
+
+    wl_data_source* m_source;
+};
