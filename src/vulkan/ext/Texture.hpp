@@ -25,6 +25,8 @@ public:
 
     NoCopy( Texture );
 
+    [[nodiscard]] VkFormat Format() const { return m_format; }
+
     operator VkImage() const { return *m_image; }
     operator VkImageView() const { return *m_imageView; }
 
