@@ -49,6 +49,7 @@ void WaylandSeat::SetDataDeviceManager( wl_data_device_manager* dataDeviceManage
         .selection = Method( DataSelection )
     };
 
+    m_dataDeviceManager = dataDeviceManager;
     m_dataDevice = wl_data_device_manager_get_data_device( dataDeviceManager, m_seat );
     wl_data_device_add_listener( m_dataDevice, &listener, this );
 }

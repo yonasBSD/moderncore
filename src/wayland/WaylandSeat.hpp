@@ -74,6 +74,7 @@ private:
     uint32_t m_inputSerial = 0;
 
     wp_cursor_shape_manager_v1* m_cursorShapeManager = nullptr;
+    wl_data_device_manager* m_dataDeviceManager = nullptr;
     wl_data_device* m_dataDevice = nullptr;
 
     std::unique_ptr<WaylandDataOffer> m_nextOffer;
