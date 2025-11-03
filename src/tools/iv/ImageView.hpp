@@ -58,6 +58,8 @@ public:
     void Pan( const Vector2<float>& delta );
     void Zoom( const Vector2<float>& focus, float factor );
 
+    std::shared_ptr<Bitmap> ReadbackSdr();
+
     [[nodiscard]] bool HasBitmap() const { return m_texture != nullptr; };
     [[nodiscard]] VkExtent2D GetBitmapExtent() const { return m_bitmapExtent; }
     [[nodiscard]] float GetImgScale() const { return m_imgScale; }
