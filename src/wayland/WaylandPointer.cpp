@@ -76,6 +76,7 @@ void WaylandPointer::Motion( wl_pointer* pointer, uint32_t time, wl_fixed_t sx, 
 
 void WaylandPointer::Button( wl_pointer* pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state )
 {
+    m_seat.SetInputSerial( serial );
     m_seat.PointerButton( m_activeWindow, button, state == WL_POINTER_BUTTON_STATE_PRESSED );
 }
 

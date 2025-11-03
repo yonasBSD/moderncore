@@ -91,6 +91,8 @@ void WaylandKeyboard::Leave( wl_keyboard* kbd, uint32_t serial, wl_surface* surf
 
 void WaylandKeyboard::Key( wl_keyboard* kbd, uint32_t serial, uint32_t time, uint32_t key, uint32_t state )
 {
+    m_seat.SetInputSerial( serial );
+
     if( state == WL_KEYBOARD_KEY_STATE_PRESSED )
     {
         m_seat.KeyEvent( m_activeWindow, key, m_modState, true );
