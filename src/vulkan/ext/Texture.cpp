@@ -9,6 +9,7 @@
 #include "util/Bitmap.hpp"
 #include "util/BitmapHdr.hpp"
 #include "util/BitmapHdrHalf.hpp"
+#include "util/Panic.hpp"
 #include "vulkan/VlkBuffer.hpp"
 #include "vulkan/VlkCommandBuffer.hpp"
 #include "vulkan/VlkDevice.hpp"
@@ -67,7 +68,11 @@ static inline VkImageCreateInfo GetImageCreateInfo( VkFormat format, uint32_t wi
         .arrayLayers = 1,
         .samples = VK_SAMPLE_COUNT_1_BIT,
         .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = VkImageUsageFlags( VK_IMAGE_USAGE_SAMPLED_BIT | ( hostImageCopy ? VK_IMAGE_USAGE_HOST_TRANSFER_BIT : VK_IMAGE_USAGE_TRANSFER_DST_BIT ) ),
+        .usage = VkImageUsageFlags( VK_IMAGE_USAGE_SAMPLED_BIT |
+            ( hostImageCopy ?
+                VK_IMAGE_USAGE_HOST_TRANSFER_BIT :
+                ( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT )
+            ) ),
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
     };
@@ -163,6 +168,101 @@ static void HostCopy( VlkDevice& device, VlkImage& image, const std::vector<MipD
     }
 }
 
+static void ReadbackBuffer( VlkDevice& device, uint32_t width, uint32_t height, VkBuffer buffer, VkImage image )
+{
+    auto cmd = std::make_unique<VlkCommandBuffer>( *device.GetCommandPool( QueueType::Graphic ) );
+    cmd->Begin( VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT );
+
+    // readback barrier
+    {
+        const VkImageMemoryBarrier2 barrier = {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+            .srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+            .dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = image,
+            .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+        };
+        const VkDependencyInfo deps = {
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .imageMemoryBarrierCount = 1,
+            .pImageMemoryBarriers = &barrier
+        };
+        vkCmdPipelineBarrier2( *cmd, &deps );
+    }
+
+    const VkBufferImageCopy region = {
+        .imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+        .imageExtent = { width, height, 1 }
+    };
+    vkCmdCopyImageToBuffer( *cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1, &region );
+
+    // read barrier
+    {
+        const VkImageMemoryBarrier2 barrier = {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+            .srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = image,
+            .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+        };
+        const VkDependencyInfo deps = {
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .imageMemoryBarrierCount = 1,
+            .pImageMemoryBarriers = &barrier
+        };
+        vkCmdPipelineBarrier2( *cmd, &deps );
+    }
+    cmd->End();
+
+    auto fence = std::make_shared<VlkFence>( device );
+    device.Submit( *cmd, *fence );
+    fence->Wait();
+}
+
+template<typename T>
+static void ReadbackHost( VlkDevice& device, std::shared_ptr<T>& bitmap, VkImage image )
+{
+    VkHostImageLayoutTransitionInfo transition = {
+        .sType = VK_STRUCTURE_TYPE_HOST_IMAGE_LAYOUT_TRANSITION_INFO,
+        .image = image,
+        .oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+    };
+    vkTransitionImageLayout( device, 1, &transition );
+
+    VkImageToMemoryCopy region = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_TO_MEMORY_COPY,
+        .pHostPointer = bitmap->Data(),
+        .imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+        .imageExtent = { bitmap->Width(), bitmap->Height(), 1 }
+    };
+    VkCopyImageToMemoryInfo copy = {
+        .sType = VK_STRUCTURE_TYPE_COPY_IMAGE_TO_MEMORY_INFO,
+        .srcImage = image,
+        .srcImageLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .regionCount = 1,
+        .pRegions = &region
+    };
+    vkCopyImageToMemory( device, &copy );
+
+    transition.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    vkTransitionImageLayout( device, 1, &transition );
+}
+
 Texture::Texture( VlkDevice& device, const Bitmap& bitmap, VkFormat format, bool mips, std::vector<std::shared_ptr<VlkFence>>& fencesOut, TaskDispatch* td )
     : m_format( format )
     , m_width( bitmap.Width() )
@@ -237,6 +337,48 @@ Texture::Texture( VlkDevice& device, const BitmapHdr& bitmap, VkFormat format, b
 
         Upload( device, mipChain, std::move( stagingBuffer ), fencesOut );
     }
+}
+
+std::shared_ptr<Bitmap> Texture::ReadbackSdr( VlkDevice& device ) const
+{
+    CheckPanic( m_format == VK_FORMAT_R8G8B8A8_SRGB, "Texture format must be VK_FORMAT_R8G8B8A8_SRGB." );
+
+    const auto bufSize = m_width * m_height * 4;
+    const auto hostImageCopy = device.UseHostImageCopy();
+
+    auto ret = std::make_shared<Bitmap>( m_width, m_height );
+    if( hostImageCopy )
+    {
+        ReadbackHost( device, ret, *m_image );
+    }
+    else
+    {
+        auto staging = std::make_shared<VlkBuffer>( device, GetStagingBufferInfo( bufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT ), VlkBuffer::WillRead | VlkBuffer::PreferHost );
+        ReadbackBuffer( device, m_width, m_height, *staging, *m_image );
+        memcpy( ret->Data(), staging->Ptr(), bufSize );
+    }
+    return ret;
+}
+
+std::shared_ptr<BitmapHdrHalf> Texture::ReadbackHdr( VlkDevice& device ) const
+{
+    CheckPanic( m_format == VK_FORMAT_R16G16B16A16_SFLOAT, "Texture format must be VK_FORMAT_R16G16B16A16_SFLOAT." );
+
+    const auto bufSize = m_width * m_height * 8;
+    const auto hostImageCopy = device.UseHostImageCopy();
+
+    auto ret = std::make_shared<BitmapHdrHalf>( m_width, m_height, Colorspace::BT2020 );
+    if( hostImageCopy )
+    {
+        ReadbackHost( device, ret, *m_image );
+    }
+    else
+    {
+        auto staging = std::make_shared<VlkBuffer>( device, GetStagingBufferInfo( bufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT ), VlkBuffer::WillRead | VlkBuffer::PreferHost );
+        ReadbackBuffer( device, m_width, m_height, *staging, *m_image );
+        memcpy( ret->Data(), staging->Ptr(), bufSize );
+    }
+    return ret;
 }
 
 void Texture::Upload( VlkDevice& device, const std::vector<MipData>& mipChain, std::shared_ptr<VlkBuffer>&& stagingBuffer, std::vector<std::shared_ptr<VlkFence>>& fencesOut )
