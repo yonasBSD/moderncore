@@ -4,8 +4,9 @@
 #include "util/Invoke.hpp"
 #include "util/Panic.hpp"
 
-WaylandDataSource::WaylandDataSource( wl_data_device_manager* manager, wl_data_device* device, const char** mime, size_t count, uint32_t serial )
-    : m_source( wl_data_device_manager_create_data_source( manager ) )
+WaylandDataSource::WaylandDataSource( WaylandSeat& seat, wl_data_device_manager* manager, wl_data_device* device, const char** mime, size_t count, uint32_t serial )
+    : m_seat( seat )
+    , m_source( wl_data_device_manager_create_data_source( manager ) )
 {
     CheckPanic( mime && count > 0, "No mime types!" );
 

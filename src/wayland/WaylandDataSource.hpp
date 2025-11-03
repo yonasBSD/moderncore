@@ -4,6 +4,8 @@
 
 #include "util/NoCopy.hpp"
 
+class WaylandSeat;
+
 class WaylandDataSource
 {
 public:
@@ -13,7 +15,7 @@ public:
         void (*OnCancelled)( void* ptr );
     };
 
-    WaylandDataSource( wl_data_device_manager* manager, wl_data_device* device, const char** mime, size_t count, uint32_t serial );
+    WaylandDataSource( WaylandSeat& seat, wl_data_device_manager* manager, wl_data_device* device, const char** mime, size_t count, uint32_t serial );
     ~WaylandDataSource();
 
     NoCopy( WaylandDataSource );
@@ -28,6 +30,7 @@ private:
     void SourceDndFinished( wl_data_source* source );
     void SourceAction( wl_data_source* source, uint32_t dndAction );
 
+    WaylandSeat& m_seat;
     wl_data_source* m_source;
 
     const Listener* m_listener = nullptr;
