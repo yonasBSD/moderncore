@@ -464,6 +464,14 @@ void Viewport::KeyEvent( uint32_t key, int mods, bool pressed )
     {
         PasteClipboard();
     }
+    else if( mods & CtrlBit && key == KEY_C )
+    {
+        std::lock_guard lock( *m_view );
+        if( !m_view->HasBitmap() ) return;
+        auto bmp = m_view->ReadbackSdr();
+        if( !bmp ) return;
+        bmp->SavePng( "readback.png" );
+    }
     else if( key == KEY_F )
     {
         std::lock_guard lock( *m_view );
