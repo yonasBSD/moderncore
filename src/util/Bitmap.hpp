@@ -35,6 +35,7 @@ public:
     [[nodiscard]] int Orientation() const { return m_orientation; }
 
     void SavePng( const char* path ) const;
+    void SavePng( int fd ) const;
 
 private:
     uint32_t m_width;

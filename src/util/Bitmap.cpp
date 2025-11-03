@@ -1,4 +1,5 @@
 #include <string.h>
+#include <unistd.h>
 #include <utility>
 
 #include <stb_image_resize2.h>
@@ -340,11 +341,16 @@ void Bitmap::SavePng( const char* path ) const
     CheckPanic( f, "Failed to open %s for writing", path );
 
     mclog( LogLevel::Info, "Saving PNG: %s", path );
+    SavePng( fileno( f ) );
+    fclose( f );
+}
 
+void Bitmap::SavePng( int fd ) const
+{
     png_structp png_ptr = png_create_write_struct( PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr );
     png_infop info_ptr = png_create_info_struct( png_ptr );
     setjmp( png_jmpbuf( png_ptr ) );
-    png_init_io( png_ptr, f );
+    png_set_write_fn( png_ptr, (png_voidp)(ptrdiff_t)fd, []( png_structp png, png_bytep data, size_t length ) { write( (int)(ptrdiff_t)png_get_io_ptr( png ), data, length ); }, nullptr );
 
     png_set_IHDR( png_ptr, info_ptr, m_width, m_height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE );
 
@@ -359,6 +365,4 @@ void Bitmap::SavePng( const char* path ) const
 
     png_write_end( png_ptr, info_ptr );
     png_destroy_write_struct( &png_ptr, &info_ptr );
-
-    fclose( f );
 }
