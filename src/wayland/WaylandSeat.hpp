@@ -4,6 +4,7 @@
 #include <string>
 #include <wayland-client.h>
 
+#include "WaylandDataSource.hpp"
 #include "util/NoCopy.hpp"
 #include "util/RobinHood.hpp"
 
@@ -19,6 +20,7 @@ class WaylandWindow;
 
 class WaylandSeat
 {
+    friend class WaylandDataSource;
     friend class WaylandKeyboard;
     friend class WaylandPointer;
 
@@ -64,6 +66,7 @@ private:
     void DataSelection( wl_data_device* dev, wl_data_offer* offer );
 
     void SetInputSerial( uint32_t serial );
+    void CancelDataSource();
 
     [[nodiscard]] WaylandWindow* GetFocusedWindow() const;
     [[nodiscard]] WaylandWindow* GetWindow( wl_surface* surf ) const;
@@ -83,6 +86,8 @@ private:
     uint32_t m_dndSerial = 0;
     wl_surface* m_dndSurface = nullptr;
     std::string m_dndMime;
+
+    std::unique_ptr<WaylandDataSource> m_dataSource;
 
     unordered_flat_map<wl_surface*, WaylandWindow*> m_windows;
     unordered_flat_map<wl_surface*, WaylandCursor> m_cursorMap;

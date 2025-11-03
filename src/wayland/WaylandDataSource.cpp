@@ -1,6 +1,7 @@
 #include <unistd.h>
 
 #include "WaylandDataSource.hpp"
+#include "WaylandSeat.hpp"
 #include "util/Invoke.hpp"
 #include "util/Panic.hpp"
 
@@ -49,6 +50,7 @@ void WaylandDataSource::SourceSend( wl_data_source* source, const char* mimeType
 void WaylandDataSource::SourceCancelled( wl_data_source* source )
 {
     Invoke( OnCancelled );
+    m_seat.CancelDataSource();
 }
 
 void WaylandDataSource::SourceDndDropPerformed( wl_data_source* source )

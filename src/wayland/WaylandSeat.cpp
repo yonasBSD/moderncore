@@ -28,6 +28,7 @@ WaylandSeat::~WaylandSeat()
     m_keyboard.reset();
     m_nextOffer.reset();
     m_selectionOffer.reset();
+    m_dataSource.reset();
     if( m_dataDevice ) wl_data_device_destroy( m_dataDevice );
     wl_seat_destroy( m_seat );
 }
@@ -308,6 +309,12 @@ void WaylandSeat::DataSelection( wl_data_device* dev, wl_data_offer* offer )
 void WaylandSeat::SetInputSerial( uint32_t serial )
 {
     m_inputSerial = serial;
+}
+
+void WaylandSeat::CancelDataSource()
+{
+    CheckPanic( m_dataSource, "No data source!" );
+    m_dataSource.reset();
 }
 
 WaylandWindow* WaylandSeat::GetFocusedWindow() const
