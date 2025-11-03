@@ -30,6 +30,9 @@
 #include "shader/TexturingAlphaPqFrag.hpp"
 #include "shader/TexturingVert.hpp"
 
+constexpr auto SdrFormat = VK_FORMAT_R8G8B8A8_SRGB;
+constexpr auto HdrFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+
 struct PushConstant
 {
     float screenSize[2];
@@ -270,7 +273,7 @@ std::shared_ptr<Texture> ImageView::SetBitmap( const std::shared_ptr<Bitmap>& bi
     }
 
     std::vector<std::shared_ptr<VlkFence>> texFences;
-    auto texture = std::make_shared<Texture>( *m_device, *bitmap, VK_FORMAT_R8G8B8A8_SRGB, true, texFences, &td );
+    auto texture = std::make_shared<Texture>( *m_device, *bitmap, SdrFormat, true, texFences, &td );
     for( auto& fence : texFences ) fence->Wait();
 
     SetTexture( texture, bitmap->Width(), bitmap->Height() );
@@ -287,7 +290,7 @@ std::shared_ptr<Texture> ImageView::SetBitmap( const std::shared_ptr<BitmapHdr>&
     }
 
     std::vector<std::shared_ptr<VlkFence>> texFences;
-    auto texture = std::make_shared<Texture>( *m_device, *bitmap, VK_FORMAT_R16G16B16A16_SFLOAT, true, texFences, &td );
+    auto texture = std::make_shared<Texture>( *m_device, *bitmap, HdrFormat, true, texFences, &td );
     for( auto& fence : texFences ) fence->Wait();
 
     SetTexture( texture, bitmap->Width(), bitmap->Height() );
