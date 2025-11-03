@@ -44,6 +44,8 @@ public:
     void AcceptDndMime( const char* mime );
     void FinishDnd( int fd );
 
+    void SetClipboard( const char** mime, size_t count, const WaylandDataSource::Listener* listener, void* listenerPtr );
+
 private:
     void KeyboardLeave( wl_surface* surf );
     void KeyEvent( wl_surface* surf, uint32_t key, int mods, bool pressed );

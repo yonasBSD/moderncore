@@ -141,6 +141,20 @@ void WaylandSeat::FinishDnd( int fd )
     m_pendingDnd.erase( it );
 }
 
+void WaylandSeat::SetClipboard( const char** mime, size_t count, const WaylandDataSource::Listener* listener, void* listenerPtr )
+{
+    if( !mime || count == 0 )
+    {
+        m_dataSource.reset();
+    }
+    else
+    {
+        CheckPanic( listener, "No listener!" );
+        m_dataSource = std::make_unique<WaylandDataSource>( *this, m_dataDeviceManager, m_dataDevice, mime, count, m_inputSerial );
+        m_dataSource->SetListener( listener, listenerPtr );
+    }
+}
+
 void WaylandSeat::KeyboardLeave( wl_surface* surf )
 {
     if( m_selectionOffer )
