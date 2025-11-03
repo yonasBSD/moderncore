@@ -405,14 +405,14 @@ void WaylandWindow::EndFrame()
         .pSignalSemaphoreInfos = &semaRenderFinished
     };
 
+    frame.presentFence->Wait();
+    frame.presentFence->Reset();
+
     m_vkDevice->lock( QueueType::Graphic );
     VkVerify( vkQueueSubmit2( m_vkDevice->GetQueue( QueueType::Graphic ), 1, &submitInfo, *frame.renderFence ) );
     m_vkDevice->unlock( QueueType::Graphic );
 
     m_currentRenderFence.store( frame.renderFence, std::memory_order_release );
-
-    frame.presentFence->Wait();
-    frame.presentFence->Reset();
 
     VkFence presentFence = *frame.presentFence;
     VkSemaphore renderFinished = *frame.renderFinished;
