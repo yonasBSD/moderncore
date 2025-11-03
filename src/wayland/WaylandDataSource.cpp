@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "WaylandDataSource.hpp"
 #include "util/Invoke.hpp"
 #include "util/Panic.hpp"
@@ -27,16 +29,25 @@ WaylandDataSource::~WaylandDataSource()
     wl_data_source_destroy( m_source );
 }
 
+void WaylandDataSource::SetListener( const Listener* listener, void* ptr )
+{
+    m_listener = listener;
+    m_listenerPtr = ptr;
+}
+
 void WaylandDataSource::SourceTarget( wl_data_source* source, const char* mimeType )
 {
 }
 
 void WaylandDataSource::SourceSend( wl_data_source* source, const char* mimeType, int32_t fd )
 {
+    Invoke( OnSend, mimeType, fd );
+    close( fd );
 }
 
 void WaylandDataSource::SourceCancelled( wl_data_source* source )
 {
+    Invoke( OnCancelled );
 }
 
 void WaylandDataSource::SourceDndDropPerformed( wl_data_source* source )
