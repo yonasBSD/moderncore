@@ -554,6 +554,11 @@ void WaylandWindow::ResumeIfIdle()
     wl_surface_commit( m_surface );
 }
 
+void WaylandWindow::SetClipboard( const char** mime, size_t count, const WaylandDataSource::Listener* listener, void* listenerPtr )
+{
+    m_display.Seat().SetClipboard( mime, count, listener, listenerPtr );
+}
+
 int WaylandWindow::GetClipboard( const char* mime )
 {
     return m_display.Seat().GetClipboard( mime );

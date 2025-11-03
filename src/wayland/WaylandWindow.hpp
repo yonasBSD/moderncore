@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 #include <wayland-client.h>
 
+#include "WaylandDataSource.hpp"
 #include "util/NoCopy.hpp"
 #include "util/RobinHood.hpp"
 #include "vulkan/VlkSurface.hpp"
@@ -111,6 +112,7 @@ public:
     [[nodiscard]] VkSurfaceKHR VkSurface() { return *m_vkSurface; }
     [[nodiscard]] VlkDevice& Device() { return *m_vkDevice; }
 
+    void SetClipboard( const char** mime, size_t count, const WaylandDataSource::Listener* listener, void* listenerPtr );
     [[nodiscard]] int GetClipboard( const char* mime );
     [[nodiscard]] int GetDnd( const char* mime );
     void AcceptDndMime( const char* mime );
