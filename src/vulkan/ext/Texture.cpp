@@ -84,12 +84,12 @@ static inline VkImageViewCreateInfo GetImageViewCreateInfo( VkImage image, VkFor
     };
 }
 
-static inline VkBufferCreateInfo GetStagingBufferInfo( uint64_t size )
+static inline VkBufferCreateInfo GetStagingBufferInfo( uint64_t size, VkBufferUsageFlags usage )
 {
     return {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .size = size,
-        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .usage = usage,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 }
@@ -184,7 +184,7 @@ Texture::Texture( VlkDevice& device, const Bitmap& bitmap, VkFormat format, bool
     }
     else
     {
-        auto stagingBuffer = std::make_shared<VlkBuffer>( device, GetStagingBufferInfo( bufsize ), VlkBuffer::WillWrite | VlkBuffer::PreferHost );
+        auto stagingBuffer = std::make_shared<VlkBuffer>( device, GetStagingBufferInfo( bufsize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT ), VlkBuffer::WillWrite | VlkBuffer::PreferHost );
 
         FillStagingBuffer( mipChain, std::unique_ptr<Bitmap>(), &bitmap, stagingBuffer, td );
         Upload( device, mipChain, std::move( stagingBuffer ), fencesOut );
@@ -222,7 +222,7 @@ Texture::Texture( VlkDevice& device, const BitmapHdr& bitmap, VkFormat format, b
     }
     else
     {
-        auto stagingBuffer = std::make_shared<VlkBuffer>( device, GetStagingBufferInfo( bufsize ), VlkBuffer::WillWrite | VlkBuffer::PreferHost );
+        auto stagingBuffer = std::make_shared<VlkBuffer>( device, GetStagingBufferInfo( bufsize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT ), VlkBuffer::WillWrite | VlkBuffer::PreferHost );
 
         if( half )
         {
