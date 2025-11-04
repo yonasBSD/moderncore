@@ -2,6 +2,7 @@
 #include <dirent.h>
 #include <format>
 #include <linux/input-event-codes.h>
+#include <nfd.h>
 #include <numbers>
 #include <stdlib.h>
 #include <string_view>
@@ -60,6 +61,8 @@ Viewport::Viewport( WaylandDisplay& display, VlkInstance& vkInstance, int gpu )
     , m_provider( std::make_shared<ImageProvider>( *m_td ) )
 {
     ZoneScoped;
+
+    NFD_Init();
 
     static constexpr WaylandWindow::Listener listener = {
         .OnClose = Method( Close ),
@@ -156,6 +159,8 @@ Viewport::~Viewport()
             fclose( f );
         }
     }
+
+    NFD_Quit();
 }
 
 void Viewport::LoadImage( const char* path, bool scanDirectory )
