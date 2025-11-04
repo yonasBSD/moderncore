@@ -35,6 +35,7 @@
 #include "vulkan/VlkPhysicalDevice.hpp"
 #include "vulkan/ext/DeviceInfo.hpp"
 #include "vulkan/ext/PhysDevSel.hpp"
+#include "vulkan/ext/Texture.hpp"
 #include "vulkan/ext/Tracy.hpp"
 #include "wayland/WaylandCursor.hpp"
 #include "wayland/WaylandDisplay.hpp"
@@ -466,11 +467,12 @@ void Viewport::KeyEvent( uint32_t key, int mods, bool pressed )
     }
     else if( mods & CtrlBit && key == KEY_C )
     {
-        std::lock_guard lock( *m_view );
-        if( !m_view->HasBitmap() ) return;
+        m_clipboard = m_view->GetTexture();
+        if( !m_clipboard ) return;
 
         static constexpr WaylandDataSource::Listener listener = {
-            .OnSend = Method( SendClipboard )
+            .OnSend = Method( SendClipboard ),
+            .OnCancelled = Method( CancelClipboard )
         };
         const char* mime = "image/png";
         m_window->SetClipboard( &mime, 1, &listener, this );
@@ -644,8 +646,16 @@ void Viewport::Scroll( const WaylandScroll& scroll )
 bool Viewport::SendClipboard( const char* mimeType, int32_t fd )
 {
     CheckPanic( strcmp( mimeType, "image/png" ) == 0, "Wrong mime type!" );
-    auto bmp = m_view->ReadbackSdr();
-    if( !bmp ) return false;
+    if( !m_clipboard ) return false;
+
+    auto format = m_clipboard->Format();
+    if( format != VK_FORMAT_R8G8B8A8_SRGB )
+    {
+        mclog( LogLevel::Warning, "Texture is not SDR." );
+        return false;
+    }
+
+    auto bmp = m_clipboard->ReadbackSdr( *m_device );
 
     std::thread thread( [bmp = std::move( bmp ), fd]() {
         bmp->SavePng( fd );
@@ -654,6 +664,11 @@ bool Viewport::SendClipboard( const char* mimeType, int32_t fd )
 
     thread.detach();
     return true;
+}
+
+void Viewport::CancelClipboard()
+{
+    m_clipboard.reset();
 }
 
 void Viewport::ImageHandler( int64_t id, ImageProvider::Result result, const ImageProvider::ReturnData& data )

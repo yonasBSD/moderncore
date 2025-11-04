@@ -421,18 +421,6 @@ void ImageView::Zoom( const Vector2<float>& focus, float factor )
     UpdateVertexBuffer();
 }
 
-std::shared_ptr<Bitmap> ImageView::ReadbackSdr()
-{
-    CheckPanic( m_texture, "No texture" );
-    auto format = m_texture->Format();
-    if( format != SdrFormat )
-    {
-        mclog( LogLevel::Warning, "Texture is not SDR." );
-        return nullptr;
-    }
-    return m_texture->ReadbackSdr( *m_device );
-}
-
 void ImageView::ClampImagePosition()
 {
     m_imgOrigin.x = std::clamp( m_imgOrigin.x, m_extent.width / 2.f - m_bitmapExtent.width * m_imgScale, m_extent.width / 2.f );

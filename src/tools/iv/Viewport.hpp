@@ -16,6 +16,7 @@ class BusyIndicator;
 class DataBuffer;
 class ImageView;
 class TaskDispatch;
+class Texture;
 class VlkDevice;
 class VlkInstance;
 class WaylandDisplay;
@@ -55,6 +56,7 @@ private:
     void Scroll( const WaylandScroll& scroll );
 
     bool SendClipboard( const char* mimeType, int32_t fd );
+    void CancelClipboard();
 
     void ImageHandler( int64_t id, ImageProvider::Result result, const ImageProvider::ReturnData& data );
 
@@ -79,6 +81,8 @@ private:
 
     std::shared_ptr<ImageProvider> m_provider;
     std::shared_ptr<ImageView> m_view;
+
+    std::shared_ptr<Texture> m_clipboard;
 
     uint64_t m_lastTime = 0;
     bool m_render = true;
