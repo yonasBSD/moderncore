@@ -468,9 +468,12 @@ void Viewport::KeyEvent( uint32_t key, int mods, bool pressed )
     {
         std::lock_guard lock( *m_view );
         if( !m_view->HasBitmap() ) return;
-        auto bmp = m_view->ReadbackSdr();
-        if( !bmp ) return;
-        bmp->SavePng( "readback.png" );
+
+        static constexpr WaylandDataSource::Listener listener = {
+            .OnSend = Method( SendClipboard )
+        };
+        const char* mime = "image/png";
+        m_window->SetClipboard( &mime, 1, &listener, this );
     }
     else if( key == KEY_F )
     {
@@ -636,6 +639,14 @@ void Viewport::Scroll( const WaylandScroll& scroll )
             WantRender();
         }
     }
+}
+
+void Viewport::SendClipboard( const char* mimeType, int32_t fd )
+{
+    CheckPanic( strcmp( mimeType, "image/png" ) == 0, "Wrong mime type!" );
+    auto bmp = m_view->ReadbackSdr();
+    if( !bmp ) return;
+    bmp->SavePng( fd );
 }
 
 void Viewport::ImageHandler( int64_t id, ImageProvider::Result result, const ImageProvider::ReturnData& data )

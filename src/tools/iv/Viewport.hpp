@@ -54,6 +54,8 @@ private:
     void MouseButton( uint32_t button, bool pressed );
     void Scroll( const WaylandScroll& scroll );
 
+    void SendClipboard( const char* mimeType, int32_t fd );
+
     void ImageHandler( int64_t id, ImageProvider::Result result, const ImageProvider::ReturnData& data );
 
     void PasteClipboard();
