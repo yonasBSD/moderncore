@@ -309,6 +309,12 @@ void ImageView::SetTexture( std::shared_ptr<Texture> texture, uint32_t width, ui
     FitToExtent( m_extent );
 }
 
+std::shared_ptr<Texture> ImageView::GetTexture()
+{
+    std::lock_guard lock( m_lock );
+    return m_texture;
+}
+
 void ImageView::SetScale( float scale, const VkExtent2D& extent )
 {
     const auto ratio = scale / m_scale;
