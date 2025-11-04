@@ -11,7 +11,7 @@ class WaylandDataSource
 public:
     struct Listener
     {
-        void (*OnSend)( void* ptr, const char* mimeType, int32_t fd );
+        bool (*OnSend)( void* ptr, const char* mimeType, int32_t fd );      // return value indicates whether closing file descriptor will be handled by callback
         void (*OnCancelled)( void* ptr );
     };
 

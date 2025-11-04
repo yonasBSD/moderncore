@@ -641,12 +641,14 @@ void Viewport::Scroll( const WaylandScroll& scroll )
     }
 }
 
-void Viewport::SendClipboard( const char* mimeType, int32_t fd )
+bool Viewport::SendClipboard( const char* mimeType, int32_t fd )
 {
     CheckPanic( strcmp( mimeType, "image/png" ) == 0, "Wrong mime type!" );
     auto bmp = m_view->ReadbackSdr();
-    if( !bmp ) return;
+    if( !bmp ) return false;
     bmp->SavePng( fd );
+    close( fd );
+    return true;
 }
 
 void Viewport::ImageHandler( int64_t id, ImageProvider::Result result, const ImageProvider::ReturnData& data )

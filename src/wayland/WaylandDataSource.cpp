@@ -43,8 +43,7 @@ void WaylandDataSource::SourceTarget( wl_data_source* source, const char* mimeTy
 
 void WaylandDataSource::SourceSend( wl_data_source* source, const char* mimeType, int32_t fd )
 {
-    Invoke( OnSend, mimeType, fd );
-    close( fd );
+    if( !InvokeRet( OnSend, false, mimeType, fd ) ) close( fd );
 }
 
 void WaylandDataSource::SourceCancelled( wl_data_source* source )
