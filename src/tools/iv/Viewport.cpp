@@ -646,8 +646,13 @@ bool Viewport::SendClipboard( const char* mimeType, int32_t fd )
     CheckPanic( strcmp( mimeType, "image/png" ) == 0, "Wrong mime type!" );
     auto bmp = m_view->ReadbackSdr();
     if( !bmp ) return false;
-    bmp->SavePng( fd );
-    close( fd );
+
+    std::thread thread( [bmp = std::move( bmp ), fd]() {
+        bmp->SavePng( fd );
+        close( fd );
+    } );
+
+    thread.detach();
     return true;
 }
 
