@@ -60,6 +60,15 @@ CPMAddPackage(
         "BASE64_WITH_OpenMP OFF"
     EXCLUDE_FROM_ALL TRUE
 )
+
+CPMAddPackage(
+    NAME nfd
+    GITHUB_REPOSITORY btzy/nativefiledialog-extended
+    GIT_TAG v1.2.1
+    EXCLUDE_FROM_ALL TRUE
+    OPTIONS
+        "NFD_PORTAL ON"
+)
 set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_SAVE})
 
 find_program(GLSLC glslc REQUIRED)
@@ -468,6 +477,7 @@ target_link_libraries(iv PRIVATE
     mcorevulkan
     mcorewayland
     Tracy::TracyClient
+    nfd::nfd
 )
 
 # vv
