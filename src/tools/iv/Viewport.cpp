@@ -482,6 +482,40 @@ void Viewport::KeyEvent( uint32_t key, int mods, bool pressed )
         const char* mime = "image/png";
         m_window->SetClipboard( &mime, 1, &listener, this );
     }
+    else if( mods & CtrlBit && key == KEY_S )
+    {
+        auto tex = m_view->GetTexture();
+        if( !tex ) return;
+
+        std::array filters = {
+            nfdu8filteritem_t { "PNG image", "*.png" }
+        };
+        nfdsavedialogu8args_t args = {
+            .filterList = filters.data(),
+            .filterCount = filters.size(),
+        };
+
+        nfdu8char_t* path;
+        if( NFD_SaveDialogU8_With( &path, &args ) == NFD_OKAY )
+        {
+            auto str = std::string( path );
+            NFD_FreePathU8( path );
+
+            int type;
+            if( str.ends_with( ".png" ) )
+            {
+                type = 0;
+            }
+            else
+            {
+                str += ".png";
+                type = 0;
+            }
+
+            auto bmp = tex->ReadbackSdr( *m_device );
+            bmp->SavePng( str.c_str() );
+        }
+    }
     else if( key == KEY_F )
     {
         std::lock_guard lock( *m_view );
