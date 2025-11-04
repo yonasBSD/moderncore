@@ -15,6 +15,7 @@
 #include "Background.hpp"
 #include "BusyIndicator.hpp"
 #include "ImageView.hpp"
+#include "TextureFormats.hpp"
 #include "Viewport.hpp"
 #include "image/ImageLoader.hpp"
 #include "image/vector/SvgImage.hpp"
@@ -688,7 +689,7 @@ bool Viewport::SendClipboard( const char* mimeType, int32_t fd )
     if( !m_clipboard ) return false;
 
     auto format = m_clipboard->Format();
-    if( format != VK_FORMAT_R8G8B8A8_SRGB )
+    if( format != SdrFormat )
     {
         mclog( LogLevel::Warning, "Texture is not SDR." );
         return false;

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "ImageView.hpp"
+#include "TextureFormats.hpp"
 #include "util/Bitmap.hpp"
 #include "util/BitmapHdr.hpp"
 #include "util/EmbedData.hpp"
@@ -29,9 +30,6 @@
 #include "shader/TexturingAlphaFrag.hpp"
 #include "shader/TexturingAlphaPqFrag.hpp"
 #include "shader/TexturingVert.hpp"
-
-constexpr auto SdrFormat = VK_FORMAT_R8G8B8A8_SRGB;
-constexpr auto HdrFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
 struct PushConstant
 {
