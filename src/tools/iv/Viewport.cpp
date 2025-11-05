@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <dirent.h>
 #include <format>
 #include <linux/input-event-codes.h>
@@ -804,10 +805,19 @@ void Viewport::PasteClipboard()
             loadOrigin = uriList[0];
         }
     }
-    if( m_clipboardOffer.contains( "image/png" ) )
+
+    constexpr std::array acceptedMimeTypes = {
+        "image/png"
+    };
+
+    for( auto& mimeType : acceptedMimeTypes )
     {
-        m_fileList.clear();
-        LoadImage( m_window->GetClipboard( "image/png" ), loadOrigin.c_str() );
+        if( m_clipboardOffer.contains( mimeType ) )
+        {
+            m_fileList.clear();
+            LoadImage( m_window->GetClipboard( mimeType ), loadOrigin.c_str() );
+            return;
+        }
     }
 }
 
