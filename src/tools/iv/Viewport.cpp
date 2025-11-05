@@ -21,6 +21,7 @@
 #include "image/vector/SvgImage.hpp"
 #include "util/Bitmap.hpp"
 #include "util/BitmapHdr.hpp"
+#include "util/BitmapHdrHalf.hpp"
 #include "util/Config.hpp"
 #include "util/DataBuffer.hpp"
 #include "util/EmbedData.hpp"
@@ -685,19 +686,26 @@ void Viewport::Scroll( const WaylandScroll& scroll )
 
 bool Viewport::SendClipboard( const char* mimeType, int32_t fd )
 {
+    ZoneScoped;
+
     CheckPanic( strcmp( mimeType, "image/png" ) == 0, "Wrong mime type!" );
     if( !m_clipboard ) return false;
 
-    auto format = m_clipboard->Format();
-    if( format != SdrFormat )
+    std::shared_ptr<Bitmap> bmp;
+    if( m_clipboard->Format() == SdrFormat )
     {
-        mclog( LogLevel::Warning, "Texture is not SDR." );
-        return false;
+        bmp = m_clipboard->ReadbackSdr( *m_device );
+    }
+    else
+    {
+        auto half = m_clipboard->ReadbackHdr( *m_device );
+        half->SetColorspace( Colorspace::BT709 );
+        auto hdr = std::make_shared<BitmapHdr>( *half );
+        bmp = hdr->Tonemap( ToneMap::Operator::PbrNeutral );
     }
 
-    auto bmp = m_clipboard->ReadbackSdr( *m_device );
-
     std::thread thread( [bmp = std::move( bmp ), fd]() {
+        ZoneScoped;
         bmp->SavePng( fd );
         close( fd );
     } );
