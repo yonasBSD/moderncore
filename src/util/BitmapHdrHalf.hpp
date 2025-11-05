@@ -22,6 +22,7 @@ public:
 
     void Resize( uint32_t width, uint32_t height, TaskDispatch* td = nullptr );
     [[nodiscard]] std::unique_ptr<BitmapHdrHalf> ResizeNew( uint32_t width, uint32_t height, TaskDispatch* td = nullptr ) const;
+    void SetColorspace( Colorspace colorspace, TaskDispatch* td = nullptr );
 
     [[nodiscard]] uint32_t Width() const { return m_width; }
     [[nodiscard]] uint32_t Height() const { return m_height; }

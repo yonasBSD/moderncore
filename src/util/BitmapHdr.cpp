@@ -1,9 +1,11 @@
 #include <cmath>
+#include <lcms2.h>
 #include <stb_image_resize2.h>
 #include <string.h>
 
 #include "Bitmap.hpp"
 #include "BitmapHdr.hpp"
+#include "Logs.hpp"
 #include "Panic.hpp"
 #include "Simd.hpp"
 #include "TaskDispatch.hpp"
@@ -146,6 +148,62 @@ void BitmapHdr::NormalizeOrientation()
     }
 
     m_orientation = 1;
+}
+
+void BitmapHdr::SetColorspace( Colorspace colorspace, TaskDispatch* td )
+{
+    if( m_colorspace == colorspace )
+    {
+        mclog( LogLevel::Warning, "Requested a no-op colorspace transform." );
+        return;
+    }
+
+    cmsToneCurve* linear = cmsBuildGamma( nullptr, 1 );
+    cmsToneCurve* linear3[3] = { linear, linear, linear };
+
+    auto profile709 = cmsCreateRGBProfile( &white709, &primaries709, linear3 );
+    auto profile2020 = cmsCreateRGBProfile( &white709, &primaries2020, linear3 );
+
+    cmsHTRANSFORM transform;
+    if( m_colorspace == Colorspace::BT2020 && colorspace == Colorspace::BT709 )
+    {
+        transform = cmsCreateTransform( profile2020, TYPE_RGBA_FLT, profile709, TYPE_RGBA_FLT, INTENT_PERCEPTUAL, cmsFLAGS_COPY_ALPHA );
+    }
+    else if( m_colorspace == Colorspace::BT709 && colorspace == Colorspace::BT2020 )
+    {
+        transform = cmsCreateTransform( profile709, TYPE_RGBA_FLT, profile2020, TYPE_RGBA_FLT, INTENT_PERCEPTUAL, cmsFLAGS_COPY_ALPHA );
+    }
+    else
+    {
+        Panic( "Invalid colorspace transform!" );
+    }
+
+    if( td )
+    {
+        auto ptr = m_data;
+        auto sz = m_width * m_height;
+        while( sz > 0 )
+        {
+            auto chunk = std::min<uint32_t>( sz, 16 * 1024 );
+            td->Queue( [ptr, chunk, transform] {
+                cmsDoTransform( transform, ptr, ptr, chunk );
+            } );
+            ptr += chunk * 4;
+            sz -= chunk;
+        }
+        td->Sync();
+    }
+    else
+    {
+        cmsDoTransform( transform, m_data, m_data, m_width * m_height );
+    }
+
+    cmsDeleteTransform( transform );
+    cmsCloseProfile( profile709 );
+    cmsCloseProfile( profile2020 );
+    cmsFreeToneCurve( linear );
+
+    m_colorspace = colorspace;
 }
 
 void BitmapHdr::FlipVertical()

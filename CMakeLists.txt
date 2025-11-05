@@ -209,10 +209,12 @@ Embed(MCOREUTIL_SRC CmykIcm src/util/cmyk.icm)
 add_library(mcoreutil ${MCOREUTIL_SRC})
 target_link_libraries(mcoreutil PRIVATE
     Tracy::TracyClient
+    ${LCMS_LINK_LIBRARIES}
     ${LZ4_LINK_LIBRARIES}
     ${PNG_LINK_LIBRARIES}
 )
 target_include_directories(mcoreutil PRIVATE
+    ${LCMS_INCLUDE_DIRS}
     ${LZ4_INCLUDE_DIRS}
     ${stb_SOURCE_DIR}
     ${PNG_INCLUDE_DIRS}

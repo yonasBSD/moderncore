@@ -21,6 +21,7 @@ public:
     [[nodiscard]] std::unique_ptr<BitmapHdr> ResizeNew( uint32_t width, uint32_t height, TaskDispatch* td = nullptr ) const;
     void SetAlpha( float alpha );
     void NormalizeOrientation();
+    void SetColorspace( Colorspace colorspace, TaskDispatch* td = nullptr );
 
     void FlipVertical();
     void FlipHorizontal();
