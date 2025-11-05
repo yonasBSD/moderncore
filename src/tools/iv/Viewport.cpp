@@ -699,7 +699,7 @@ bool Viewport::SendClipboard( const char* mimeType, int32_t fd )
     else
     {
         auto half = m_clipboard->ReadbackHdr( *m_device );
-        half->SetColorspace( Colorspace::BT709 );
+        half->SetColorspace( Colorspace::BT709, m_td.get() );
         auto hdr = std::make_shared<BitmapHdr>( *half );
         bmp = hdr->Tonemap( ToneMap::Operator::PbrNeutral );
     }
