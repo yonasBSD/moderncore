@@ -353,7 +353,12 @@ bool Bitmap::SavePng( int fd ) const
 
     png_structp png_ptr = png_create_write_struct( PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr );
     png_infop info_ptr = png_create_info_struct( png_ptr );
-    setjmp( png_jmpbuf( png_ptr ) );
+    if( setjmp( png_jmpbuf( png_ptr ) ) )
+    {
+        png_destroy_write_struct( &png_ptr, &info_ptr );
+        return false;
+    }
+
     png_set_write_fn( png_ptr, (png_voidp)(ptrdiff_t)fd, []( png_structp png, png_bytep data, size_t length ) {
         if( write( (int)(ptrdiff_t)png_get_io_ptr( png ), data, length ) < 0 ) png_error( png, "Write error" );
     }, nullptr );
