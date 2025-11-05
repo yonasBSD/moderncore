@@ -1,9 +1,9 @@
-#include <string.h>
-#include <unistd.h>
-#include <utility>
-
 #include <stb_image_resize2.h>
 #include <png.h>
+#include <string.h>
+#include <tracy/Tracy.hpp>
+#include <unistd.h>
+#include <utility>
 
 #include "Alloca.h"
 #include "Bitmap.hpp"
@@ -347,6 +347,8 @@ void Bitmap::SavePng( const char* path ) const
 
 void Bitmap::SavePng( int fd ) const
 {
+    ZoneScoped;
+
     png_structp png_ptr = png_create_write_struct( PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr );
     png_infop info_ptr = png_create_info_struct( png_ptr );
     setjmp( png_jmpbuf( png_ptr ) );

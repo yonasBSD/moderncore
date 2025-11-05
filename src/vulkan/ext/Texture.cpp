@@ -341,6 +341,7 @@ Texture::Texture( VlkDevice& device, const BitmapHdr& bitmap, VkFormat format, b
 
 std::shared_ptr<Bitmap> Texture::ReadbackSdr( VlkDevice& device ) const
 {
+    ZoneScoped;
     CheckPanic( m_format == VK_FORMAT_R8G8B8A8_SRGB, "Texture format must be VK_FORMAT_R8G8B8A8_SRGB." );
 
     const auto bufSize = m_width * m_height * 4;
@@ -362,6 +363,7 @@ std::shared_ptr<Bitmap> Texture::ReadbackSdr( VlkDevice& device ) const
 
 std::shared_ptr<BitmapHdrHalf> Texture::ReadbackHdr( VlkDevice& device ) const
 {
+    ZoneScoped;
     CheckPanic( m_format == VK_FORMAT_R16G16B16A16_SFLOAT, "Texture format must be VK_FORMAT_R16G16B16A16_SFLOAT." );
 
     const auto bufSize = m_width * m_height * 8;

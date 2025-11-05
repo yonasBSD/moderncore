@@ -1,6 +1,7 @@
 #include <cmath>
 #include <lcms2.h>
 #include <stb_image_resize2.h>
+#include <tracy/Tracy.hpp>
 
 #if defined __F16C__
 #  include <x86intrin.h>
@@ -16,6 +17,8 @@
 
 static void FloatToHalf( const float* src, half_float::half* dst, size_t sz )
 {
+    ZoneScoped;
+
 #ifdef __F16C__
   #ifdef __AVX512F__
     while( sz >= 16 )
@@ -135,6 +138,8 @@ void BitmapHdrHalf::SetColorspace( Colorspace colorspace, TaskDispatch* td )
         mclog( LogLevel::Warning, "Requested a no-op colorspace transform." );
         return;
     }
+
+    ZoneScoped;
 
     cmsToneCurve* linear = cmsBuildGamma( nullptr, 1 );
     cmsToneCurve* linear3[3] = { linear, linear, linear };

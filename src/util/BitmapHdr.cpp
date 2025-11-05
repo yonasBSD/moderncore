@@ -2,6 +2,7 @@
 #include <lcms2.h>
 #include <stb_image_resize2.h>
 #include <string.h>
+#include <tracy/Tracy.hpp>
 
 #if defined __F16C__
 #  include <x86intrin.h>
@@ -19,6 +20,8 @@
 
 static void HalfToFloat( const half_float::half* src, float* dst, size_t sz )
 {
+    ZoneScoped;
+
 #ifdef __F16C__
   #ifdef __AVX512F__
     while( sz >= 16 )
@@ -356,6 +359,7 @@ void BitmapHdr::Rotate270()
 
 std::unique_ptr<Bitmap> BitmapHdr::Tonemap( ToneMap::Operator op )
 {
+    ZoneScoped;
     CheckPanic( m_colorspace == Colorspace::BT709, "Tone mapping requires BT.709 colorspace" );
     auto bmp = std::make_unique<Bitmap>( m_width, m_height );
     ToneMap::Process( op, (uint32_t*)bmp->Data(), m_data, m_width * m_height );
