@@ -8,11 +8,13 @@
 #include "Tonemapper.hpp"
 
 class Bitmap;
+class BitmapHdrHalf;
 class TaskDispatch;
 
 class BitmapHdr
 {
 public:
+    explicit BitmapHdr( const BitmapHdrHalf& bmp );
     BitmapHdr( uint32_t width, uint32_t height, Colorspace colorspace, int orientation = 0 );
     ~BitmapHdr();
     NoCopy( BitmapHdr );

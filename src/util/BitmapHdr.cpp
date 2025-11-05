@@ -3,12 +3,65 @@
 #include <stb_image_resize2.h>
 #include <string.h>
 
+#if defined __F16C__
+#  include <x86intrin.h>
+#endif
+
+#include "contrib/half.hpp"
+
 #include "Bitmap.hpp"
 #include "BitmapHdr.hpp"
+#include "BitmapHdrHalf.hpp"
 #include "Logs.hpp"
 #include "Panic.hpp"
 #include "Simd.hpp"
 #include "TaskDispatch.hpp"
+
+static void HalfToFloat( const half_float::half* src, float* dst, size_t sz )
+{
+#ifdef __F16C__
+  #ifdef __AVX512F__
+    while( sz >= 16 )
+    {
+        __m256i h = _mm256_loadu_si256( (__m256i*)src );
+        __m512 f = _mm512_cvtph_ps( h );
+        _mm512_storeu_ps( dst, f );
+        src += 16;
+        dst += 16;
+        sz -= 16;
+    }
+  #endif
+  #ifdef __AVX2__
+    while( sz >= 8 )
+    {
+        __m128i h = _mm_loadu_si128( (__m128i*)src );
+        __m256 f = _mm256_cvtph_ps( h );
+        _mm256_storeu_ps( dst, f );
+        src += 8;
+        dst += 8;
+        sz -= 8;
+    }
+  #endif
+#endif
+
+    while( sz-- > 0 )
+    {
+        *dst++ = *src++;
+    }
+}
+
+BitmapHdr::BitmapHdr( const BitmapHdrHalf& bmp )
+    : m_width( bmp.Width() )
+    , m_height( bmp.Height() )
+    , m_data( new float[m_width*m_height*4] )
+    , m_colorspace( bmp.GetColorspace() )
+{
+    auto src = bmp.Data();
+    auto dst = m_data;
+    auto sz = m_width * m_height * 4;
+
+    HalfToFloat( src, dst, sz );
+}
 
 BitmapHdr::BitmapHdr( uint32_t width, uint32_t height, Colorspace colorspace, int orientation )
     : m_width( width )
