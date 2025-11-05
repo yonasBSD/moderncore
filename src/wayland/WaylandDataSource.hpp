@@ -15,7 +15,7 @@ public:
         void (*OnCancelled)( void* ptr );
     };
 
-    WaylandDataSource( WaylandSeat& seat, wl_data_device_manager* manager, wl_data_device* device, const char** mime, size_t count, uint32_t serial );
+    WaylandDataSource( WaylandSeat& seat, wl_data_device_manager* manager, wl_data_device* device, const char* const* mime, size_t count, uint32_t serial );
     ~WaylandDataSource();
 
     NoCopy( WaylandDataSource );

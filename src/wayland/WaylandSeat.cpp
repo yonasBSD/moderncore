@@ -141,7 +141,7 @@ void WaylandSeat::FinishDnd( int fd )
     m_pendingDnd.erase( it );
 }
 
-void WaylandSeat::SetClipboard( const char** mime, size_t count, const WaylandDataSource::Listener* listener, void* listenerPtr )
+void WaylandSeat::SetClipboard( const char* const* mime, size_t count, const WaylandDataSource::Listener* listener, void* listenerPtr )
 {
     if( !mime || count == 0 )
     {

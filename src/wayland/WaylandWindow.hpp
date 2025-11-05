@@ -112,7 +112,7 @@ public:
     [[nodiscard]] VkSurfaceKHR VkSurface() { return *m_vkSurface; }
     [[nodiscard]] VlkDevice& Device() { return *m_vkDevice; }
 
-    void SetClipboard( const char** mime, size_t count, const WaylandDataSource::Listener* listener, void* listenerPtr );
+    void SetClipboard( const char* const* mime, size_t count, const WaylandDataSource::Listener* listener, void* listenerPtr );
     [[nodiscard]] int GetClipboard( const char* mime );
     [[nodiscard]] int GetDnd( const char* mime );
     void AcceptDndMime( const char* mime );
