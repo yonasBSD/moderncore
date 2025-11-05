@@ -4,6 +4,7 @@
 #include <linux/input-event-codes.h>
 #include <nfd.h>
 #include <numbers>
+#include <signal.h>
 #include <stdlib.h>
 #include <string_view>
 #include <sys/stat.h>
@@ -706,6 +707,7 @@ bool Viewport::SendClipboard( const char* mimeType, int32_t fd )
 
     std::thread thread( [bmp = std::move( bmp ), fd]() {
         ZoneScoped;
+        signal( SIGPIPE, SIG_IGN );
         bmp->SavePng( fd );
         close( fd );
     } );
