@@ -34,8 +34,8 @@ public:
     [[nodiscard]] const uint8_t* Data() const { return m_data; }
     [[nodiscard]] int Orientation() const { return m_orientation; }
 
-    void SavePng( const char* path ) const;
-    void SavePng( int fd ) const;
+    bool SavePng( const char* path ) const;
+    bool SavePng( int fd ) const;
 
 private:
     uint32_t m_width;

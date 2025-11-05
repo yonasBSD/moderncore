@@ -335,17 +335,19 @@ void Bitmap::NormalizeOrientation()
     m_orientation = 1;
 }
 
-void Bitmap::SavePng( const char* path ) const
+bool Bitmap::SavePng( const char* path ) const
 {
     FILE* f = fopen( path, "wb" );
     CheckPanic( f, "Failed to open %s for writing", path );
 
     mclog( LogLevel::Info, "Saving PNG: %s", path );
-    SavePng( fileno( f ) );
+    auto res = SavePng( fileno( f ) );
     fclose( f );
+
+    return res;
 }
 
-void Bitmap::SavePng( int fd ) const
+bool Bitmap::SavePng( int fd ) const
 {
     ZoneScoped;
 
@@ -369,4 +371,6 @@ void Bitmap::SavePng( int fd ) const
 
     png_write_end( png_ptr, info_ptr );
     png_destroy_write_struct( &png_ptr, &info_ptr );
+
+    return true;
 }
