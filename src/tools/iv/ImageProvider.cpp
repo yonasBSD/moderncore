@@ -124,45 +124,46 @@ void ImageProvider::Worker()
         std::unique_ptr<BitmapHdr> bitmapHdr;
         struct timespec mtime = {};
 
+        std::unique_ptr<ImageLoader> loader;
         if( job.fd >= 0 )
         {
             mclog( LogLevel::Info, "Loading image from file descriptor" );
             auto buffer = std::make_shared<MemoryBuffer>( job.fd );
-            PngLoader loader( std::move( buffer ) );
-            if( loader.IsValid() ) bitmap = loader.Load();
+            loader = GetImageLoader( buffer );
         }
         else
         {
             mclog( LogLevel::Info, "Loading image %s", job.path.c_str() );
-            auto loader = GetImageLoader( job.path.c_str(), ToneMap::Operator::PbrNeutral, &m_td, &mtime );
-            if( loader )
+            loader = GetImageLoader( job.path.c_str(), ToneMap::Operator::PbrNeutral, &m_td, &mtime );
+        }
+
+        if( loader )
+        {
+            if( loader->IsHdr() && ( job.hdr || loader->PreferHdr() ) )
             {
-                if( loader->IsHdr() && ( job.hdr || loader->PreferHdr() ) )
+                bitmapHdr = loader->LoadHdr( job.hdr ? Colorspace::BT2020 : Colorspace::BT709 );
+                if( !job.hdr )
                 {
-                    bitmapHdr = loader->LoadHdr( job.hdr ? Colorspace::BT2020 : Colorspace::BT709 );
-                    if( !job.hdr )
+                    bitmap = std::make_unique<Bitmap>( bitmapHdr->Width(), bitmapHdr->Height() );
+                    auto src = bitmapHdr->Data();
+                    auto dst = bitmap->Data();
+                    size_t sz = bitmapHdr->Width() * bitmapHdr->Height();
+                    while( sz > 0 )
                     {
-                        bitmap = std::make_unique<Bitmap>( bitmapHdr->Width(), bitmapHdr->Height() );
-                        auto src = bitmapHdr->Data();
-                        auto dst = bitmap->Data();
-                        size_t sz = bitmapHdr->Width() * bitmapHdr->Height();
-                        while( sz > 0 )
-                        {
-                            const auto chunk = std::min( sz, size_t( 16 * 1024 ) );
-                            m_td.Queue( [src, dst, chunk] {
-                                ToneMap::Process( ToneMap::Operator::PbrNeutral, (uint32_t*)dst, src, chunk );
-                            } );
-                            src += chunk * 4;
-                            dst += chunk * 4;
-                            sz -= chunk;
-                        }
-                        m_td.Sync();
+                        const auto chunk = std::min( sz, size_t( 16 * 1024 ) );
+                        m_td.Queue( [src, dst, chunk] {
+                            ToneMap::Process( ToneMap::Operator::PbrNeutral, (uint32_t*)dst, src, chunk );
+                        } );
+                        src += chunk * 4;
+                        dst += chunk * 4;
+                        sz -= chunk;
                     }
+                    m_td.Sync();
                 }
-                else
-                {
-                    bitmap = loader->Load();
-                }
+            }
+            else
+            {
+                bitmap = loader->Load();
             }
         }
 
