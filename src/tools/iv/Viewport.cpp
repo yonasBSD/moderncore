@@ -843,6 +843,7 @@ void Viewport::PasteClipboard()
     }
 
     constexpr std::array acceptedMimeTypes = {
+        "image/x-exr",
         "image/png"
     };
 
