@@ -9,6 +9,7 @@
 class Bitmap;
 class BitmapAnim;
 class BitmapHdr;
+class DataBuffer;
 class TaskDispatch;
 class VectorImage;
 
@@ -28,5 +29,7 @@ public:
 };
 
 std::unique_ptr<ImageLoader> GetImageLoader( const char* path, ToneMap::Operator tonemap, TaskDispatch* td = nullptr, struct timespec* mtime = nullptr );
+std::unique_ptr<ImageLoader> GetImageLoader( const std::shared_ptr<DataBuffer>& buffer );
+
 std::unique_ptr<Bitmap> LoadImage( const char* path );
 std::unique_ptr<VectorImage> LoadVectorImage( const char* path );

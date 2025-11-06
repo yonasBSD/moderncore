@@ -19,6 +19,7 @@
 #include "util/Bitmap.hpp"
 #include "util/BitmapAnim.hpp"
 #include "util/BitmapHdr.hpp"
+#include "util/DataBuffer.hpp"
 #include "util/FileWrapper.hpp"
 #include "util/Logs.hpp"
 #include "vector/PdfImage.hpp"
@@ -44,6 +45,14 @@ static inline std::unique_ptr<ImageLoader> CheckImageLoader( const uint8_t* buf,
 {
     if( !T::IsValidSignature( buf, size ) ) return nullptr;
     auto loader = std::make_unique<T>( file, std::forward<Args>( args )... );
+    if( loader->IsValid() ) return loader;
+    return nullptr;
+}
+
+template<ImageLoaderConcept T, typename... Args>
+static inline std::unique_ptr<ImageLoader> CheckImageLoader( const std::shared_ptr<DataBuffer>& buffer, Args&&... args )
+{
+    auto loader = std::make_unique<T>( buffer, std::forward<Args>( args )... );
     if( loader->IsValid() ) return loader;
     return nullptr;
 }
@@ -97,6 +106,15 @@ std::unique_ptr<ImageLoader> GetImageLoader( const char* path, ToneMap::Operator
     if( auto loader = CheckImageLoader<TiffLoader>( buf, sz, file ); loader ) return loader;
 
     mclog( LogLevel::Debug, "Raster image loaders can't open %s", path );
+    return nullptr;
+}
+
+std::unique_ptr<ImageLoader> GetImageLoader( const std::shared_ptr<DataBuffer>& buffer )
+{
+    ZoneScoped;
+
+    if( auto loader = CheckImageLoader<PngLoader>( buffer ); loader ) return loader;
+
     return nullptr;
 }
 
