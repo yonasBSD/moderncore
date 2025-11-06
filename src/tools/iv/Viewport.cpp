@@ -483,8 +483,20 @@ void Viewport::KeyEvent( uint32_t key, int mods, bool pressed )
             .OnSend = Method( SendClipboard ),
             .OnCancelled = Method( CancelClipboard )
         };
-        const char* mime = "image/png";
-        m_window->SetClipboard( &mime, 1, &listener, this );
+
+        if( m_clipboard->Format() == SdrFormat )
+        {
+            const char* mime = "image/png";
+            m_window->SetClipboard( &mime, 1, &listener, this );
+        }
+        else
+        {
+            constexpr std::array mime = {
+                "image/x-exr",
+                "image/png"
+            };
+            m_window->SetClipboard( mime.data(), mime.size(), &listener, this );
+        }
     }
     else if( mods & CtrlBit && key == KEY_S )
     {
