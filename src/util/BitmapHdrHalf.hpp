@@ -31,6 +31,7 @@ public:
     [[nodiscard]] Colorspace GetColorspace() const { return m_colorspace; }
 
     bool SaveExr( const char* path ) const;
+    bool SaveExr( int fd ) const;
 
 private:
     uint32_t m_width;

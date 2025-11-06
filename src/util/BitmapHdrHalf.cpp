@@ -1,4 +1,5 @@
 #include <cmath>
+#include <ImfStdIO.h>
 #include <ImfRgbaFile.h>
 #include <lcms2.h>
 #include <stb_image_resize2.h>
@@ -195,5 +196,29 @@ bool BitmapHdrHalf::SaveExr( const char* path ) const
     Imf::RgbaOutputFile output( path, m_width, m_height, Imf::WRITE_RGBA );
     output.setFrameBuffer( (const Imf::Rgba*)m_data, 1, m_width );
     output.writePixels( m_height );
+    return true;
+}
+
+bool BitmapHdrHalf::SaveExr( int fd ) const
+{
+    Imf::StdOSStream buf;
+    Imf::Header hdr( m_width, m_height );
+    Imf::RgbaOutputFile output( buf, hdr );
+    output.setFrameBuffer( (const Imf::Rgba*)m_data, 1, m_width );
+    output.writePixels( m_height );
+
+    auto str = buf.str();
+    auto data = str.data();
+    auto sz = str.size();
+
+    while( sz > 0 )
+    {
+        auto chunk = std::min( sz, size_t( 64 * 1024 ) );
+        auto cnt = write( fd, data, chunk );
+        if( cnt <= 0 ) return false;
+        data += cnt;
+        sz -= cnt;
+    }
+
     return true;
 }
