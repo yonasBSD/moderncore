@@ -129,7 +129,7 @@ void ImageProvider::Worker()
         {
             mclog( LogLevel::Info, "Loading image from file descriptor" );
             auto buffer = std::make_shared<MemoryBuffer>( job.fd );
-            loader = GetImageLoader( buffer );
+            loader = GetImageLoader( buffer, ToneMap::Operator::PbrNeutral, &m_td );
         }
         else
         {

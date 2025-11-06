@@ -109,11 +109,12 @@ std::unique_ptr<ImageLoader> GetImageLoader( const char* path, ToneMap::Operator
     return nullptr;
 }
 
-std::unique_ptr<ImageLoader> GetImageLoader( const std::shared_ptr<DataBuffer>& buffer )
+std::unique_ptr<ImageLoader> GetImageLoader( const std::shared_ptr<DataBuffer>& buffer, ToneMap::Operator tonemap, TaskDispatch* td )
 {
     ZoneScoped;
 
     if( auto loader = CheckImageLoader<PngLoader>( buffer ); loader ) return loader;
+    if( auto loader = CheckImageLoader<ExrLoader>( buffer, tonemap, td ); loader ) return loader;
 
     return nullptr;
 }
