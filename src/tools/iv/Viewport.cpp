@@ -688,32 +688,56 @@ void Viewport::Scroll( const WaylandScroll& scroll )
 
 bool Viewport::SendClipboard( const char* mimeType, int32_t fd )
 {
+    if( !m_clipboard ) return false;
     ZoneScoped;
 
-    CheckPanic( strcmp( mimeType, "image/png" ) == 0, "Wrong mime type!" );
-    if( !m_clipboard ) return false;
-
-    std::shared_ptr<Bitmap> bmp;
-    if( m_clipboard->Format() == SdrFormat )
+    if( strcmp( mimeType, "image/png" ) == 0 )
     {
-        bmp = m_clipboard->ReadbackSdr( *m_device );
+        std::shared_ptr<Bitmap> bmp;
+        if( m_clipboard->Format() == SdrFormat )
+        {
+            bmp = m_clipboard->ReadbackSdr( *m_device );
+        }
+        else
+        {
+            auto half = m_clipboard->ReadbackHdr( *m_device );
+            half->SetColorspace( Colorspace::BT709, m_td.get() );
+            auto hdr = std::make_shared<BitmapHdr>( *half );
+            bmp = hdr->Tonemap( ToneMap::Operator::PbrNeutral );
+        }
+
+        std::thread thread( [bmp = std::move( bmp ), fd]() {
+            ZoneScoped;
+            signal( SIGPIPE, SIG_IGN );
+            bmp->SavePng( fd );
+            close( fd );
+        } );
+        thread.detach();
+    }
+    else if( strcmp( mimeType, "image/x-exr" ) == 0 )
+    {
+        if( m_clipboard->Format() != HdrFormat )
+        {
+            mclog( LogLevel::Error, "Format %s requested but clipboard contains SDR image.", mimeType );
+            return false;
+        }
+
+        auto bmp = m_clipboard->ReadbackHdr( *m_device );
+        bmp->SetColorspace( Colorspace::BT709, m_td.get() );
+        std::thread thread( [bmp = std::move( bmp ), fd]() {
+            ZoneScoped;
+            signal( SIGPIPE, SIG_IGN );
+            bmp->SaveExr( fd );
+            close( fd );
+        } );
+        thread.detach();
     }
     else
     {
-        auto half = m_clipboard->ReadbackHdr( *m_device );
-        half->SetColorspace( Colorspace::BT709, m_td.get() );
-        auto hdr = std::make_shared<BitmapHdr>( *half );
-        bmp = hdr->Tonemap( ToneMap::Operator::PbrNeutral );
+        mclog( LogLevel::Error, "Unsupported clipboard format: %s", mimeType );
+        return false;
     }
 
-    std::thread thread( [bmp = std::move( bmp ), fd]() {
-        ZoneScoped;
-        signal( SIGPIPE, SIG_IGN );
-        bmp->SavePng( fd );
-        close( fd );
-    } );
-
-    thread.detach();
     return true;
 }
 
