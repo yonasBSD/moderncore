@@ -50,6 +50,12 @@
 
 #include "data/IconSvg.hpp"
 
+enum class ImageType
+{
+    Png,
+    Exr
+};
+
 static uint64_t Now()
 {
     timespec ts;
@@ -463,6 +469,35 @@ void Viewport::Drop( int fd, const char* mime )
     m_loadOrigin.clear();
 }
 
+static void SaveImage( const char* path, ImageType type, const std::shared_ptr<Texture>& tex, VlkDevice& device, TaskDispatch* td )
+{
+    const auto format = tex->Format();
+
+    if( type == ImageType::Exr )
+    {
+        CheckPanic( format == HdrFormat, "Saving EXR, but texture is not HDR!" );
+        auto bmp = tex->ReadbackHdr( device );
+        bmp->SetColorspace( Colorspace::BT709, td );
+        bmp->SaveExr( path );
+        return;
+    }
+
+    std::shared_ptr<Bitmap> bmp;
+    if( format == SdrFormat )
+    {
+        bmp = tex->ReadbackSdr( device );
+    }
+    else
+    {
+        auto half = tex->ReadbackHdr( device );
+        half->SetColorspace( Colorspace::BT709, td );
+        auto hdr = std::make_shared<BitmapHdr>( *half );
+        bmp = hdr->Tonemap( ToneMap::Operator::PbrNeutral );
+    }
+
+    bmp->SavePng( path );
+}
+
 void Viewport::KeyEvent( uint32_t key, int mods, bool pressed )
 {
     if( !pressed ) return;
@@ -503,12 +538,14 @@ void Viewport::KeyEvent( uint32_t key, int mods, bool pressed )
         auto tex = m_view->GetTexture();
         if( !tex ) return;
 
-        std::array filters = {
-            nfdu8filteritem_t { "PNG image", "*.png" }
+        std::vector<nfdu8filteritem_t> filters = {
+            nfdu8filteritem_t { "PNG image", "*.png" },
         };
+        const auto isHdr = tex->Format() == HdrFormat;
+        if( isHdr ) filters.emplace_back( nfdu8filteritem_t { "EXR image", "*.exr" } );
         nfdsavedialogu8args_t args = {
             .filterList = filters.data(),
-            .filterCount = filters.size(),
+            .filterCount = (nfdfiltersize_t)filters.size(),
         };
 
         nfdu8char_t* path;
@@ -517,19 +554,22 @@ void Viewport::KeyEvent( uint32_t key, int mods, bool pressed )
             auto str = std::string( path );
             NFD_FreePathU8( path );
 
-            int type;
+            ImageType type;
             if( str.ends_with( ".png" ) )
             {
-                type = 0;
+                type = ImageType::Png;
+            }
+            else if( isHdr && str.ends_with( ".exr" ) )
+            {
+                type = ImageType::Exr;
             }
             else
             {
                 str += ".png";
-                type = 0;
+                type = ImageType::Png;
             }
 
-            auto bmp = tex->ReadbackSdr( *m_device );
-            bmp->SavePng( str.c_str() );
+            SaveImage( str.c_str(), type, tex, *m_device, m_td.get() );
         }
     }
     else if( key == KEY_F )
