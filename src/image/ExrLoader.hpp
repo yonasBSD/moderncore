@@ -8,11 +8,14 @@
 #include "util/NoCopy.hpp"
 
 class Bitmap;
-class ExrStream;
 class FileWrapper;
 class TaskDispatch;
 
-namespace OPENEXR_IMF_INTERNAL_NAMESPACE { class RgbaInputFile; }
+namespace OPENEXR_IMF_INTERNAL_NAMESPACE
+{
+    class IStream;
+    class RgbaInputFile;
+}
 
 class ExrLoader : public ImageLoader
 {
@@ -30,7 +33,7 @@ public:
     [[nodiscard]] std::unique_ptr<BitmapHdr> LoadHdr( Colorspace colorspace ) override;
 
 private:
-    std::unique_ptr<ExrStream> m_stream;
+    std::unique_ptr<OPENEXR_IMF_INTERNAL_NAMESPACE::IStream> m_stream;
     std::unique_ptr<OPENEXR_IMF_INTERNAL_NAMESPACE::RgbaInputFile> m_exr;
 
     TaskDispatch* m_td;
