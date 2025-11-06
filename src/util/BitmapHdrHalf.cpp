@@ -1,4 +1,5 @@
 #include <cmath>
+#include <ImfRgbaFile.h>
 #include <lcms2.h>
 #include <stb_image_resize2.h>
 #include <tracy/Tracy.hpp>
@@ -187,4 +188,12 @@ void BitmapHdrHalf::SetColorspace( Colorspace colorspace, TaskDispatch* td )
     cmsFreeToneCurve( linear );
 
     m_colorspace = colorspace;
+}
+
+bool BitmapHdrHalf::SaveExr( const char* path ) const
+{
+    Imf::RgbaOutputFile output( path, m_width, m_height, Imf::WRITE_RGBA );
+    output.setFrameBuffer( (const Imf::Rgba*)m_data, 1, m_width );
+    output.writePixels( m_height );
+    return true;
 }

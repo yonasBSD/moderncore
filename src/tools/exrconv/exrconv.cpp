@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <thread>
 
-#include <ImfRgbaFile.h>
-
 #include "image/ImageLoader.hpp"
 #include "util/Ansi.hpp"
 #include "util/BitmapHdr.hpp"
@@ -60,10 +58,7 @@ int main( int argc, char** argv )
     CheckPanic( hdr, "Failed to load image %s", inFile );
 
     auto half = std::make_unique<BitmapHdrHalf>( *hdr );
-
-    Imf::RgbaOutputFile output( outFile, hdr->Width(), hdr->Height(), Imf::WRITE_RGBA );
-    output.setFrameBuffer( (const Imf::Rgba*)half->Data(), 1, hdr->Width() );
-    output.writePixels( hdr->Height() );
+    half->SaveExr( outFile );
 
     return 0;
 }

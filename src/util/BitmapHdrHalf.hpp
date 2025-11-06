@@ -30,6 +30,8 @@ public:
     [[nodiscard]] const half_float::half* Data() const { return m_data; }
     [[nodiscard]] Colorspace GetColorspace() const { return m_colorspace; }
 
+    bool SaveExr( const char* path ) const;
+
 private:
     uint32_t m_width;
     uint32_t m_height;
