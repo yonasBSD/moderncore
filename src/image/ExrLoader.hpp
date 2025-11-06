@@ -8,6 +8,7 @@
 #include "util/NoCopy.hpp"
 
 class Bitmap;
+class DataBuffer;
 class FileWrapper;
 class TaskDispatch;
 
@@ -21,6 +22,7 @@ class ExrLoader : public ImageLoader
 {
 public:
     explicit ExrLoader( std::shared_ptr<FileWrapper> file, ToneMap::Operator tonemap, TaskDispatch* td );
+    explicit ExrLoader( std::shared_ptr<DataBuffer> buf, ToneMap::Operator tonemap, TaskDispatch* td );
     ~ExrLoader() override;
     NoCopy( ExrLoader );
 

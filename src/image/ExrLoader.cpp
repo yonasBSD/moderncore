@@ -9,6 +9,7 @@
 #include "util/Bitmap.hpp"
 #include "util/BitmapHdr.hpp"
 #include "util/Colorspace.hpp"
+#include "util/DataBuffer.hpp"
 #include "util/FileWrapper.hpp"
 #include "util/Panic.hpp"
 #include "util/TaskDispatch.hpp"
@@ -61,6 +62,50 @@ ExrLoader::ExrLoader( std::shared_ptr<FileWrapper> file, ToneMap::Operator tonem
     try
     {
         m_stream = std::make_unique<ExrStream>( std::move( file ) );
+        m_exr = std::make_unique<Imf::RgbaInputFile>( *m_stream );
+        m_valid = true;
+    }
+    catch( const std::exception& )
+    {
+        m_valid = false;
+    }
+}
+
+class ExrBuffer : public Imf::IStream
+{
+public:
+    explicit ExrBuffer( std::shared_ptr<DataBuffer>&& buffer )
+        : Imf::IStream( "<unknown>" )
+        , m_buffer( std::move( buffer ) )
+        , m_pos( 0 )
+    {
+    }
+
+    bool isMemoryMapped() const override { return false; }
+    bool read( char c[], int n ) override
+    {
+        const auto sz = std::min<size_t>( n, m_buffer->size() - m_pos );
+        memcpy( c, m_buffer->data() + m_pos, sz );
+        m_pos += sz;
+        return m_pos < m_buffer->size();
+    }
+    uint64_t tellg() override { return m_pos; }
+    void seekg( uint64_t pos ) override { m_pos = pos; }
+
+private:
+    std::shared_ptr<DataBuffer> m_buffer;
+    size_t m_pos;
+};
+
+ExrLoader::ExrLoader( std::shared_ptr<DataBuffer> buffer, ToneMap::Operator tonemap, TaskDispatch* td )
+    : m_td( td )
+    , m_tonemap( tonemap )
+{
+    static ExrThreadSetter setter;
+
+    try
+    {
+        m_stream = std::make_unique<ExrBuffer>( std::move( buffer ) );
         m_exr = std::make_unique<Imf::RgbaInputFile>( *m_stream );
         m_valid = true;
     }
