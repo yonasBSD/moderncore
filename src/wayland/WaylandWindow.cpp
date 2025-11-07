@@ -33,6 +33,7 @@ WaylandWindow::WaylandWindow( WaylandDisplay& display, VlkInstance& vkInstance )
     : m_display( display )
     , m_vkInstance( vkInstance )
     , m_hdrCapable( false )
+    , m_extent {}
     , m_bounds {}
     , m_idle( false )
     , m_cursor( WaylandCursor::Default )
@@ -687,6 +688,13 @@ void WaylandWindow::XdgSurfaceConfigure( struct xdg_surface *xdg_surface, uint32
 {
     xdg_surface_ack_configure( xdg_surface, serial );
     if( !m_vkSurface ) m_vkSurface = std::make_shared<VlkSurface>( m_vkInstance, m_display.Display(), m_surface );
+
+    if( m_extent.width != 0 )
+    {
+        Update();
+        Invoke( OnRender );
+        wl_surface_commit( m_surface );
+    }
 }
 
 void WaylandWindow::XdgToplevelConfigure( struct xdg_toplevel* toplevel, int32_t width, int32_t height, struct wl_array* states )
@@ -717,8 +725,6 @@ void WaylandWindow::XdgToplevelConfigure( struct xdg_toplevel* toplevel, int32_t
             .height = uint32_t( height )
         };
     }
-
-    ResumeIfIdle();
 }
 
 void WaylandWindow::XdgToplevelClose( struct xdg_toplevel* toplevel )
