@@ -689,11 +689,12 @@ void WaylandWindow::XdgSurfaceConfigure( struct xdg_surface *xdg_surface, uint32
     xdg_surface_ack_configure( xdg_surface, serial );
     if( !m_vkSurface ) m_vkSurface = std::make_shared<VlkSurface>( m_vkInstance, m_display.Display(), m_surface );
 
-    if( m_extent.width != 0 )
+    if( m_extent.width != 0 && m_idle.load( std::memory_order_acquire ) )
     {
         Update();
         Invoke( OnRender );
         wl_surface_commit( m_surface );
+        m_idle.store( false, std::memory_order_release );
     }
 }
 
